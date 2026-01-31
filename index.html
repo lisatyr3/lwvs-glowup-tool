@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Find Your Best Colors + Routine</title>
+  <style>
+    :root{
+      --max: 860px; --border:#e7e7e7; --text:#1a1a1a; --muted:#555;
+      --btn:#111; --btnText:#fff; --card:#fafafa;
+    }
+    body{ margin:0; font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; color:var(--text); }
+    .wrap{ max-width:var(--max); margin:0 auto; padding:28px 16px 44px; }
+    h1{ font-size:34px; margin:0 0 6px; }
+    .sub{ color:var(--muted); margin:0 0 18px; line-height:1.4; }
+    .box{ border:1px solid var(--border); border-radius:14px; padding:16px; background:#fff; }
+    .row{ display:flex; gap:14px; flex-wrap:wrap; align-items:center; }
+    input[type=file]{ max-width:100%; }
+    button{ background:var(--btn); color:var(--btnText); border:0; padding:12px 16px; border-radius:10px; cursor:pointer; font-weight:600; }
+    button:disabled{ opacity:.55; cursor:not-allowed; }
+    .hint{ font-size:13px; color:var(--muted); margin-top:10px; }
+    .preview{ margin-top:14px; display:none; gap:14px; align-items:flex-start; }
+    .preview img{ width:160px; height:auto; border-radius:12px; border:1px solid var(--border); }
+    .status{ margin-top:14px; color:var(--muted); }
+    .results{ margin-top:18px; display:none; }
+    .card{ background:var(--card); border:1px solid var(--border); border-radius:14px; padding:14px; margin:12px 0; }
+    .card h2{ font-size:18px; margin:0 0 8px; }
+    ul{ margin:8px 0 0 18px; }
+    a.shop{ display:inline-block; margin-top:8px; text-decoration:none; }
+    .disclosure{ font-size:12px; color:var(--muted); margin-top:18px; }
+    .footer{ margin-top:18px; font-size:12px; color:var(--muted); }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <h1>Find Your Best Colors + Easy Routine</h1>
+    <p class="sub">Upload a clear, front-facing photo in natural light (no heavy filters). You’ll get flattering color tips, a simple routine, and product picks chosen from Lisa’s curated list.</p>
+
+    <div class="box">
+      <div class="row">
+        <input id="photo" type="file" accept="image/*" />
+        <button id="go" disabled>Analyze My Photo</button>
+      </div>
+      <div class="hint">Tip: Stand near a window, face the light, and remove sunglasses. Glasses are fine.</div>
+
+      <div class="preview" id="preview">
+        <img id="thumb" alt="Preview" />
+        <div>
+          <div><strong>Photo looks good?</strong></div>
+          <div class="hint">Best results: natural light, neutral background, minimal makeup.</div>
+        </div>
+      </div>
+
+      <div class="status" id="status"></div>
+    </div>
+
+    <div class="results" id="results">
+      <div class="card" id="summaryCard">
+        <h2>Your Results</h2>
+        <div id="summary"></div>
+      </div>
+
+      <div class="card">
+        <h2>Shop Your Look</h2>
+        <div id="shop"></div>
+        <div class="disclosure">
+          Affiliate disclosure: This page contains affiliate links. If you buy through my links, I may earn a small commission at no extra cost to you.
+        </div>
+      </div>
+
+      <div class="footer">
+        This tool offers general style guidance and isn’t medical advice. If you have skin sensitivities, patch test and consult a dermatologist.
+      </div>
+    </div>
+  </div>
+
+  <script src="./products.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
