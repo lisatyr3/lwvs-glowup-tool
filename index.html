@@ -3,10 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <title>Glow Up Analyzer</title>
+
   <style>
     body {
       font-family: system-ui, Arial;
-      max-width: 650px;
+      max-width: 700px;
       margin: 40px auto;
       padding: 20px;
       text-align: center;
@@ -16,6 +17,7 @@
       border: 2px dashed #ccc;
       padding: 30px;
       border-radius: 12px;
+      margin-bottom: 20px;
     }
 
     button {
@@ -32,6 +34,11 @@
     #result {
       margin-top: 30px;
       text-align: left;
+      line-height: 1.6;
+    }
+
+    ul {
+      padding-left: 20px;
     }
   </style>
 </head>
@@ -51,111 +58,113 @@
 <script>
 const WORKER_URL = "https://lwfs-glowup.lisa-668.workers.dev";
 
-// Affiliate products HTML (static list)
-const productsHTML = `
-<hr style="margin:40px 0">
 
-<h3>🛍 Shop My Recommended Products</h3>
-<p style="margin-bottom:15px;">These are easy, mature-skin friendly picks I love and recommend:</p>
+// =================================================
+// SMART PRODUCT MATCHING (based on AI text)
+// =================================================
+function buildProductLinks(aiText) {
 
-<ul style="line-height:1.9">
+  const products = [];
+  const t = aiText.toLowerCase();
 
-  <li><strong>Lightweight Coverage:</strong>
-    <a href="https://amzn.to/3ZdhexZ" target="_blank" rel="noopener">Maybelline Dream Fresh BB Cream</a> or
-    <a href="https://amzn.to/4qXIz3A" target="_blank" rel="noopener">IT Cosmetics CC+ Cream</a>
-  </li>
+  const add = (name, link) => {
+    products.push(`<li><a href="${link}" target="_blank">${name}</a></li>`);
+  };
 
-  <li><strong>Brightening Concealer:</strong>
-    <a href="https://amzn.to/4kaUqIV" target="_blank" rel="noopener">Maybelline Fit Me Concealer</a>
-  </li>
+  // Makeup
+  if (t.includes("foundation") || t.includes("bb cream") || t.includes("coverage")) {
+    add("Maybelline Dream Fresh BB Cream", "https://amzn.to/3ZdhexZ");
+    add("IT Cosmetics CC+ Cream", "https://amzn.to/4qXIz3A");
+  }
 
-  <li><strong>Cream Blush (more youthful than powder):</strong>
-    <a href="https://amzn.to/4t7NDni" target="_blank" rel="noopener">e.l.f. Monochromatic Multi Stick</a> or
-    <a href="https://amzn.to/49RDHXF" target="_blank" rel="noopener">Laura Geller Serum Blush Tint</a>
-  </li>
+  if (t.includes("concealer") || t.includes("under eye")) {
+    add("Maybelline Fit Me Concealer", "https://amzn.to/4kaUqIV");
+  }
 
-  <li><strong>Soft Brown Liner:</strong>
-    <a href="https://amzn.to/3ZI9bJD" target="_blank" rel="noopener">Revlon ColorStay Pencil (Black Brown)</a>
-  </li>
+  if (t.includes("blush")) {
+    add("e.l.f. Cream Multi Stick (Blush)", "https://amzn.to/4t7NDni");
+  }
 
-  <li><strong>Mascara (lengthening, not clumpy):</strong>
-    <a href="https://amzn.to/4auXEnb" target="_blank" rel="noopener">L’Oréal Telescopic Mascara</a> or
-    <a href="https://amzn.to/4rmV48k" target="_blank" rel="noopener">Maybelline Sky High Mascara</a>
-  </li>
+  if (t.includes("liner") || t.includes("eyeliner")) {
+    add("Revlon Soft Brown Eyeliner", "https://amzn.to/3ZI9bJD");
+  }
 
-  <li><strong>Hydrating Lip Color:</strong>
-    <a href="https://amzn.to/3ZHf2yP" target="_blank" rel="noopener">Revlon Glass Shine Balm</a> or
-    <a href="https://amzn.to/4tfKUbG" target="_blank" rel="noopener">Clinique Dramatically Different Lipstick</a>
-  </li>
+  if (t.includes("mascara") || t.includes("lashes")) {
+    add("L’Oreal Telescopic Mascara", "https://amzn.to/4auXEnb");
+  }
 
-  <li><strong>Gentle Cleanser:</strong>
-    <a href="https://amzn.to/45ElBFX" target="_blank" rel="noopener">CeraVe Hydrating Facial Cleanser</a> or
-    <a href="https://amzn.to/4qXK2H8" target="_blank" rel="noopener">La Roche-Posay Toleriane Hydrating Cleanser</a>
-  </li>
+  if (t.includes("lip")) {
+    add("Revlon Glass Shine Lip Balm", "https://amzn.to/3ZHf2yP");
+  }
 
-  <li><strong>Vitamin C:</strong>
-    <a href="https://amzn.to/4aq94so" target="_blank" rel="noopener">TruSkin Vitamin C Serum</a> or
-    <a href="https://amzn.to/3LNeOTL" target="_blank" rel="noopener">CeraVe Vitamin C Serum</a>
-  </li>
+  // Hair
+  if (t.includes("volume") || t.includes("lift") || t.includes("root")) {
+    add("Color Wow Root Lift Spray", "https://amzn.to/4kbLbIf");
+  }
 
-  <li><strong>SPF (daily):</strong>
-    <a href="https://amzn.to/4qebwHg" target="_blank" rel="noopener">Aveeno Protect + Hydrate SPF 60</a>
-  </li>
+  if (t.includes("heat") || t.includes("blow")) {
+    add("Kenra Heat Protectant Spray", "https://amzn.to/4t5oTMp");
+  }
 
-  <li><strong>Root Lift / Volume:</strong>
-    <a href="https://amzn.to/4kbLbIf" target="_blank" rel="noopener">Color Wow Raise the Root Spray</a>
-  </li>
+  // Skincare
+  if (t.includes("cleanser")) {
+    add("CeraVe Hydrating Cleanser", "https://amzn.to/45ElBFX");
+  }
 
-  <li><strong>Heat Protectant:</strong>
-    <a href="https://amzn.to/4t5oTMp" target="_blank" rel="noopener">Kenra Thermal Styling Spray 19</a>
-  </li>
+  if (t.includes("vitamin c")) {
+    add("TruSkin Vitamin C Serum", "https://amzn.to/4aq94so");
+  }
 
-</ul>
-`;
+  if (t.includes("spf") || t.includes("sunscreen")) {
+    add("Aveeno Protect + Hydrate SPF 60", "https://amzn.to/4qebwHg");
+  }
 
+  if (products.length === 0) return "";
+
+  return `
+    <hr style="margin:40px 0">
+    <h3>🛍 Products I’d Recommend For You</h3>
+    <p>Based on your results and what typically works best for mature skin:</p>
+    <ul>
+      ${products.join("")}
+    </ul>
+  `;
+}
+
+
+// =================================================
+// MAIN UPLOAD FUNCTION
+// =================================================
 async function upload() {
-  const fileInput = document.getElementById("imageInput");
-  const file = fileInput.files[0];
+
+  const file = document.getElementById("imageInput").files[0];
   if (!file) return alert("Please upload a photo first");
 
   const resultDiv = document.getElementById("result");
-  resultDiv.innerHTML = "Analyzing your photo... please wait 💕";
+
+  resultDiv.innerHTML = "Analyzing your photo… please wait 💕";
 
   const formData = new FormData();
   formData.append("image", file);
 
   try {
+
     const res = await fetch(WORKER_URL, {
       method: "POST",
       body: formData
     });
 
-    if (!res.ok) {
-      const errText = await res.text();
-      resultDiv.innerHTML = `<p><strong>Oops!</strong> Something went wrong (${res.status}).</p><pre>${escapeHtml(errText)}</pre>`;
-      return;
-    }
-
     const text = await res.text();
 
-    // Show AI result + products
-    resultDiv.innerHTML = text + productsHTML;
+    // Show AI analysis + matched products
+    resultDiv.innerHTML = text + buildProductLinks(text);
 
   } catch (err) {
-    resultDiv.innerHTML = `<p><strong>Network error:</strong> ${escapeHtml(err.message)}</p>`;
+    resultDiv.innerHTML = "Something went wrong. Please try again.";
   }
-}
-
-// Small helper to safely display errors
-function escapeHtml(str) {
-  return String(str)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
 }
 </script>
 
 </body>
 </html>
+
