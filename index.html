@@ -32,7 +32,6 @@
     #result {
       margin-top: 30px;
       text-align: left;
-      white-space: pre-wrap;
     }
   </style>
 </head>
@@ -50,18 +49,9 @@
 <div id="result"></div>
 
 <script>
-async function upload() {
-  const file = document.getElementById("imageInput").files[0];
-  if (!file) return alert("Please upload a photo first");
+const WORKER_URL = "https://lwfs-glowup.lisa-668.workers.dev";
 
-  const formData = new FormData();
-  formData.append("image", file);
-
-  document.getElementById("result").innerHTML = "Analyzing your photo... please wait 💕";
-  // ---------------------
-// Add affiliate products
-// ---------------------
-
+// Affiliate products HTML (static list)
 const productsHTML = `
 <hr style="margin:40px 0">
 
@@ -70,53 +60,100 @@ const productsHTML = `
 
 <ul style="line-height:1.9">
 
-<li><strong>Lightweight Coverage:</strong>
-<a href="https://amzn.to/3ZdhexZ" target="_blank">Maybelline Dream Fresh BB Cream</a> or
-<a href="https://amzn.to/4qXIz3A" target="_blank">IT Cosmetics CC+ Cream</a>
-</li>
+  <li><strong>Lightweight Coverage:</strong>
+    <a href="https://amzn.to/3ZdhexZ" target="_blank" rel="noopener">Maybelline Dream Fresh BB Cream</a> or
+    <a href="https://amzn.to/4qXIz3A" target="_blank" rel="noopener">IT Cosmetics CC+ Cream</a>
+  </li>
 
-<li><strong>Brightening Concealer:</strong>
-<a href="https://amzn.to/4kaUqIV" target="_blank">Maybelline Fit Me Concealer</a>
-</li>
+  <li><strong>Brightening Concealer:</strong>
+    <a href="https://amzn.to/4kaUqIV" target="_blank" rel="noopener">Maybelline Fit Me Concealer</a>
+  </li>
 
-<li><strong>Cream Blush (more youthful than powder):</strong>
-<a href="https://amzn.to/4t7NDni" target="_blank">e.l.f. Multi Stick</a> or
-<a href="https://amzn.to/49RDHXF" target="_blank">Laura Geller Serum Blush</a>
-</li>
+  <li><strong>Cream Blush (more youthful than powder):</strong>
+    <a href="https://amzn.to/4t7NDni" target="_blank" rel="noopener">e.l.f. Monochromatic Multi Stick</a> or
+    <a href="https://amzn.to/49RDHXF" target="_blank" rel="noopener">Laura Geller Serum Blush Tint</a>
+  </li>
 
-<li><strong>Soft Brown Liner:</strong>
-<a href="https://amzn.to/3ZI9bJD" target="_blank">Revlon ColorStay Brown Eyeliner</a>
-</li>
+  <li><strong>Soft Brown Liner:</strong>
+    <a href="https://amzn.to/3ZI9bJD" target="_blank" rel="noopener">Revlon ColorStay Pencil (Black Brown)</a>
+  </li>
 
-<li><strong>Mascara (lengthening, not clumpy):</strong>
-<a href="https://amzn.to/4auXEnb" target="_blank">L’Oreal Telescopic Mascara</a>
-</li>
+  <li><strong>Mascara (lengthening, not clumpy):</strong>
+    <a href="https://amzn.to/4auXEnb" target="_blank" rel="noopener">L’Oréal Telescopic Mascara</a> or
+    <a href="https://amzn.to/4rmV48k" target="_blank" rel="noopener">Maybelline Sky High Mascara</a>
+  </li>
 
-<li><strong>Hydrating Lip Color:</strong>
-<a href="https://amzn.to/3ZHf2yP" target="_blank">Revlon Glass Shine Balm</a>
-</li>
+  <li><strong>Hydrating Lip Color:</strong>
+    <a href="https://amzn.to/3ZHf2yP" target="_blank" rel="noopener">Revlon Glass Shine Balm</a> or
+    <a href="https://amzn.to/4tfKUbG" target="_blank" rel="noopener">Clinique Dramatically Different Lipstick</a>
+  </li>
 
-<li><strong>Gentle Cleanser:</strong>
-<a href="https://amzn.to/45ElBFX" target="_blank">CeraVe Hydrating Cleanser</a>
-</li>
+  <li><strong>Gentle Cleanser:</strong>
+    <a href="https://amzn.to/45ElBFX" target="_blank" rel="noopener">CeraVe Hydrating Facial Cleanser</a> or
+    <a href="https://amzn.to/4qXK2H8" target="_blank" rel="noopener">La Roche-Posay Toleriane Hydrating Cleanser</a>
+  </li>
 
-<li><strong>Volume at the Roots:</strong>
-<a href="https://amzn.to/4kbLbIf" target="_blank">Color Wow Raise the Root Spray</a>
-</li>
+  <li><strong>Vitamin C:</strong>
+    <a href="https://amzn.to/4aq94so" target="_blank" rel="noopener">TruSkin Vitamin C Serum</a> or
+    <a href="https://amzn.to/3LNeOTL" target="_blank" rel="noopener">CeraVe Vitamin C Serum</a>
+  </li>
+
+  <li><strong>SPF (daily):</strong>
+    <a href="https://amzn.to/4qebwHg" target="_blank" rel="noopener">Aveeno Protect + Hydrate SPF 60</a>
+  </li>
+
+  <li><strong>Root Lift / Volume:</strong>
+    <a href="https://amzn.to/4kbLbIf" target="_blank" rel="noopener">Color Wow Raise the Root Spray</a>
+  </li>
+
+  <li><strong>Heat Protectant:</strong>
+    <a href="https://amzn.to/4t5oTMp" target="_blank" rel="noopener">Kenra Thermal Styling Spray 19</a>
+  </li>
 
 </ul>
 `;
 
-resultDiv.innerHTML += productsHTML;
+async function upload() {
+  const fileInput = document.getElementById("imageInput");
+  const file = fileInput.files[0];
+  if (!file) return alert("Please upload a photo first");
 
+  const resultDiv = document.getElementById("result");
+  resultDiv.innerHTML = "Analyzing your photo... please wait 💕";
 
-  const res = await fetch("https://lwfs-glowup.lisa-668.workers.dev", {
-    method: "POST",
-    body: formData
-  });
+  const formData = new FormData();
+  formData.append("image", file);
 
-  const text = await res.text();
-  document.getElementById("result").innerHTML = text;
+  try {
+    const res = await fetch(WORKER_URL, {
+      method: "POST",
+      body: formData
+    });
+
+    if (!res.ok) {
+      const errText = await res.text();
+      resultDiv.innerHTML = `<p><strong>Oops!</strong> Something went wrong (${res.status}).</p><pre>${escapeHtml(errText)}</pre>`;
+      return;
+    }
+
+    const text = await res.text();
+
+    // Show AI result + products
+    resultDiv.innerHTML = text + productsHTML;
+
+  } catch (err) {
+    resultDiv.innerHTML = `<p><strong>Network error:</strong> ${escapeHtml(err.message)}</p>`;
+  }
+}
+
+// Small helper to safely display errors
+function escapeHtml(str) {
+  return String(str)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
 </script>
 
