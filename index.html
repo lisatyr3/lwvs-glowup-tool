@@ -1,173 +1,154 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Glow Up Analyzer</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <style>
-    body {
-      font-family: system-ui, Arial;
-      max-width: 700px;
-      margin: 40px auto;
-      padding: 20px;
-      text-align: center;
-    }
+<title>Glow Up Analyzer</title>
 
-    .box {
-      border: 2px dashed #ccc;
-      padding: 30px;
-      border-radius: 12px;
-      margin-bottom: 20px;
-    }
+<style>
+body{
+  font-family: system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto;
+  background:#f8f6f4;
+  margin:0;
+  padding:40px 20px;
+  display:flex;
+  justify-content:center;
+}
 
-    button {
-      background: #b87b6b;
-      color: white;
-      padding: 12px 22px;
-      border: none;
-      border-radius: 8px;
-      font-size: 16px;
-      cursor: pointer;
-      margin-top: 15px;
-    }
+.wrapper{
+  width:100%;
+  max-width:720px;
+  background:white;
+  padding:36px;
+  border-radius:18px;
+  box-shadow:0 10px 30px rgba(0,0,0,.08);
+}
 
-    #result {
-      margin-top: 30px;
-      text-align: left;
-      line-height: 1.6;
-    }
+h2{
+  text-align:center;
+  margin-top:0;
+}
 
-    ul {
-      padding-left: 20px;
-    }
-  </style>
+.upload-box{
+  border:2px dashed #d8d8d8;
+  padding:30px;
+  border-radius:14px;
+  text-align:center;
+  margin-bottom:25px;
+  background:#fafafa;
+}
+
+button{
+  background:#b87b6b;
+  color:white;
+  border:none;
+  padding:14px 26px;
+  border-radius:10px;
+  font-size:16px;
+  cursor:pointer;
+  margin-top:12px;
+}
+
+button:hover{
+  opacity:.9;
+}
+
+#preview{
+  margin-top:18px;
+  max-width:220px;
+  border-radius:12px;
+  display:none;
+}
+
+#result{
+  margin-top:35px;
+  line-height:1.6;
+}
+
+#result h3{
+  margin-top:30px;
+}
+
+#loading{
+  text-align:center;
+  font-style:italic;
+  color:#777;
+  margin-top:20px;
+}
+</style>
 </head>
 
 <body>
 
-<h2>Your Personalized Glow Up Plan 💕</h2>
+<div class="wrapper">
 
-<div class="box">
-  <input type="file" id="imageInput" accept="image/*" />
-  <br/>
-  <button onclick="upload()">Analyze My Photo</button>
+  <h2>Your Personalized Glow-Up Plan ✨</h2>
+
+  <div class="upload-box">
+    <input type="file" id="imageInput" accept="image/*" />
+    <br/>
+    <button onclick="upload()">Analyze My Photo</button>
+    <br/>
+    <img id="preview" />
+  </div>
+
+  <div id="loading"></div>
+  <div id="result"></div>
+
 </div>
 
-<div id="result"></div>
-
 <script>
-const WORKER_URL = "https://lwfs-glowup.lisa-668.workers.dev";
+const WORKER_URL = "https://lwfs-glowup.lisa-668.workers.dev"; 
+// ^ keep your worker URL here
 
+// preview image
+document.getElementById("imageInput").addEventListener("change", e=>{
+  const file = e.target.files[0];
+  if(!file) return;
 
-// =================================================
-// SMART PRODUCT MATCHING (based on AI text)
-// =================================================
-function buildProductLinks(aiText) {
+  const preview = document.getElementById("preview");
+  preview.src = URL.createObjectURL(file);
+  preview.style.display="block";
+});
 
-  const products = [];
-  const t = aiText.toLowerCase();
-
-  const add = (name, link) => {
-    products.push(`<li><a href="${link}" target="_blank">${name}</a></li>`);
-  };
-
-  // Makeup
-  if (t.includes("foundation") || t.includes("bb cream") || t.includes("coverage")) {
-    add("Maybelline Dream Fresh BB Cream", "https://amzn.to/3ZdhexZ");
-    add("IT Cosmetics CC+ Cream", "https://amzn.to/4qXIz3A");
-  }
-
-  if (t.includes("concealer") || t.includes("under eye")) {
-    add("Maybelline Fit Me Concealer", "https://amzn.to/4kaUqIV");
-  }
-
-  if (t.includes("blush")) {
-    add("e.l.f. Cream Multi Stick (Blush)", "https://amzn.to/4t7NDni");
-  }
-
-  if (t.includes("liner") || t.includes("eyeliner")) {
-    add("Revlon Soft Brown Eyeliner", "https://amzn.to/3ZI9bJD");
-  }
-
-  if (t.includes("mascara") || t.includes("lashes")) {
-    add("L’Oreal Telescopic Mascara", "https://amzn.to/4auXEnb");
-  }
-
-  if (t.includes("lip")) {
-    add("Revlon Glass Shine Lip Balm", "https://amzn.to/3ZHf2yP");
-  }
-
-  // Hair
-  if (t.includes("volume") || t.includes("lift") || t.includes("root")) {
-    add("Color Wow Root Lift Spray", "https://amzn.to/4kbLbIf");
-  }
-
-  if (t.includes("heat") || t.includes("blow")) {
-    add("Kenra Heat Protectant Spray", "https://amzn.to/4t5oTMp");
-  }
-
-  // Skincare
-  if (t.includes("cleanser")) {
-    add("CeraVe Hydrating Cleanser", "https://amzn.to/45ElBFX");
-  }
-
-  if (t.includes("vitamin c")) {
-    add("TruSkin Vitamin C Serum", "https://amzn.to/4aq94so");
-  }
-
-  if (t.includes("spf") || t.includes("sunscreen")) {
-    add("Aveeno Protect + Hydrate SPF 60", "https://amzn.to/4qebwHg");
-  }
-
-  if (products.length === 0) return "";
-
-  return `
-    <hr style="margin:40px 0">
-    <h3>🛍 Helpful Products Based on Your Results</h3>
-<p style="font-size:14px;color:#666;">
-These are well-reviewed, mature-skin friendly picks that match what your analysis suggested.
-</p>
-
-    <ul>
-      ${products.join("")}
-    </ul>
-  `;
-}
-
-
-// =================================================
-// MAIN UPLOAD FUNCTION
-// =================================================
-async function upload() {
+async function upload(){
 
   const file = document.getElementById("imageInput").files[0];
-  if (!file) return alert("Please upload a photo first");
+  if(!file){
+    alert("Please upload a photo first 😊");
+    return;
+  }
 
   const resultDiv = document.getElementById("result");
+  const loading = document.getElementById("loading");
 
-  resultDiv.innerHTML = "Analyzing your photo… please wait 💕";
+  resultDiv.innerHTML = "";
+  loading.innerHTML = "Analyzing your photo… please wait 💕";
 
   const formData = new FormData();
   formData.append("image", file);
 
-  try {
-
+  try{
     const res = await fetch(WORKER_URL, {
       method: "POST",
       body: formData
     });
 
-    const text = await res.text();
+    const html = await res.text();
 
-    // Show AI analysis + matched products
-    resultDiv.innerHTML = text + buildProductLinks(text);
-
-  } catch (err) {
-    resultDiv.innerHTML = "Something went wrong. Please try again.";
+    loading.innerHTML = "";
+    resultDiv.innerHTML = html;   // ← ONLY show worker output
+  }
+  catch(err){
+    loading.innerHTML = "";
+    resultDiv.innerHTML = "Something went wrong. Try again.";
+    console.error(err);
   }
 }
 </script>
 
 </body>
 </html>
+
 
