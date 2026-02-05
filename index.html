@@ -1,154 +1,269 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8" />
+  <title>Glow Up Analyzer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body {
+      font-family: system-ui, Arial;
+      max-width: 650px;
+      margin: 40px auto;
+      padding: 20px;
+      text-align: center;
+    }
 
-<title>Glow Up Analyzer</title>
+    h2 { margin-bottom: 18px; }
 
-<style>
-body{
-  font-family: system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto;
-  background:#f8f6f4;
-  margin:0;
-  padding:40px 20px;
-  display:flex;
-  justify-content:center;
-}
+    .box {
+      border: 2px dashed #ccc;
+      padding: 22px;
+      border-radius: 12px;
+    }
 
-.wrapper{
-  width:100%;
-  max-width:720px;
-  background:white;
-  padding:36px;
-  border-radius:18px;
-  box-shadow:0 10px 30px rgba(0,0,0,.08);
-}
+    button {
+      background: #b87b6b;
+      color: white;
+      padding: 12px 22px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-top: 12px;
+    }
 
-h2{
-  text-align:center;
-  margin-top:0;
-}
+    button.secondary {
+      background: #6b7fb8;
+    }
 
-.upload-box{
-  border:2px dashed #d8d8d8;
-  padding:30px;
-  border-radius:14px;
-  text-align:center;
-  margin-bottom:25px;
-  background:#fafafa;
-}
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
 
-button{
-  background:#b87b6b;
-  color:white;
-  border:none;
-  padding:14px 26px;
-  border-radius:10px;
-  font-size:16px;
-  cursor:pointer;
-  margin-top:12px;
-}
+    #thumbWrap {
+      margin-top: 14px;
+      display: none;
+      justify-content: center;
+    }
 
-button:hover{
-  opacity:.9;
-}
+    #thumb {
+      width: 140px;
+      height: 140px;
+      object-fit: cover;
+      border-radius: 10px;
+      border: 1px solid #ddd;
+    }
 
-#preview{
-  margin-top:18px;
-  max-width:220px;
-  border-radius:12px;
-  display:none;
-}
+    #result {
+      margin-top: 26px;
+      text-align: left;
+    }
 
-#result{
-  margin-top:35px;
-  line-height:1.6;
-}
+    /* Results from the Worker are HTML; keep them readable */
+    #result h3 { margin-top: 22px; }
+    #result ul { padding-left: 18px; }
+    #result li { margin: 8px 0; line-height: 1.4; }
+    #result p { line-height: 1.5; }
 
-#result h3{
-  margin-top:30px;
-}
+    #glowSection {
+      display: none;
+      margin-top: 26px;
+      text-align: center;
+    }
 
-#loading{
-  text-align:center;
-  font-style:italic;
-  color:#777;
-  margin-top:20px;
-}
-</style>
+    #glowImg {
+      width: 100%;
+      max-width: 520px;
+      border-radius: 14px;
+      border: 1px solid #e5e5e5;
+      margin-top: 12px;
+    }
+
+    #downloadLink {
+      display: none;
+      margin-top: 12px;
+      display: inline-block;
+      text-decoration: none;
+      background: #2f7d4d;
+      color: white;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-weight: 600;
+    }
+
+    .hint {
+      color: #666;
+      font-size: 14px;
+      margin-top: 10px;
+      line-height: 1.35;
+    }
+
+    .divider {
+      margin: 26px 0;
+      border: none;
+      border-top: 1px solid #eee;
+    }
+  </style>
 </head>
 
 <body>
 
-<div class="wrapper">
-
   <h2>Your Personalized Glow-Up Plan ✨</h2>
 
-  <div class="upload-box">
+  <div class="box">
     <input type="file" id="imageInput" accept="image/*" />
+    <div id="thumbWrap">
+      <img id="thumb" alt="Uploaded photo preview" />
+    </div>
     <br/>
-    <button onclick="upload()">Analyze My Photo</button>
+    <button id="analyzeBtn" onclick="analyze()">Analyze My Photo</button>
     <br/>
-    <img id="preview" />
+    <button id="glowBtn" class="secondary" onclick="makeGlowUp()" style="display:none;">
+      See My Glow-Up Photo ✨
+    </button>
+    <div class="hint" id="glowHint" style="display:none;">
+      This creates a soft “after” preview (same you — just brighter + more polished).
+    </div>
   </div>
 
-  <div id="loading"></div>
   <div id="result"></div>
 
-</div>
+  <div id="glowSection">
+    <hr class="divider"/>
+    <h3 style="text-align:center;margin:0;">Your Glow-Up Preview ✨</h3>
+    <img id="glowImg" alt="Glow-up preview" />
+    <br/>
+    <a id="downloadLink" href="#" download="my-glow-up.png">Download My Glow-Up Photo</a>
+  </div>
 
 <script>
-const WORKER_URL = "https://lwfs-glowup.lisa-668.workers.dev"; 
-// ^ keep your worker URL here
+  // ✅ CHANGE THESE TWO
+  const ANALYZE_URL = "https://lwfs-glowup.lisa-668.workers.dev";     // your current worker
+  const GLOWUP_URL  = "https://lwfs-glowup.lisa-668.workers.dev/glow"; // we’ll build this next
 
-// preview image
-document.getElementById("imageInput").addEventListener("change", e=>{
-  const file = e.target.files[0];
-  if(!file) return;
+  const imageInput = document.getElementById("imageInput");
+  const resultDiv  = document.getElementById("result");
+  const analyzeBtn = document.getElementById("analyzeBtn");
+  const glowBtn    = document.getElementById("glowBtn");
+  const glowHint   = document.getElementById("glowHint");
 
-  const preview = document.getElementById("preview");
-  preview.src = URL.createObjectURL(file);
-  preview.style.display="block";
-});
+  const thumbWrap  = document.getElementById("thumbWrap");
+  const thumbImg   = document.getElementById("thumb");
 
-async function upload(){
+  const glowSection   = document.getElementById("glowSection");
+  const glowImg       = document.getElementById("glowImg");
+  const downloadLink  = document.getElementById("downloadLink");
 
-  const file = document.getElementById("imageInput").files[0];
-  if(!file){
-    alert("Please upload a photo first 😊");
-    return;
+  let lastFile = null;
+  let lastGlowObjectUrl = null;
+
+  imageInput.addEventListener("change", () => {
+    const file = imageInput.files[0];
+    lastFile = file || null;
+
+    // reset UI
+    resultDiv.innerHTML = "";
+    glowBtn.style.display = "none";
+    glowHint.style.display = "none";
+    glowSection.style.display = "none";
+    downloadLink.style.display = "none";
+    if (lastGlowObjectUrl) {
+      URL.revokeObjectURL(lastGlowObjectUrl);
+      lastGlowObjectUrl = null;
+    }
+
+    // show preview
+    if (file) {
+      const objectUrl = URL.createObjectURL(file);
+      thumbImg.src = objectUrl;
+      thumbWrap.style.display = "flex";
+    } else {
+      thumbWrap.style.display = "none";
+    }
+  });
+
+  async function analyze() {
+    const file = imageInput.files[0];
+    if (!file) return alert("Please upload a photo first.");
+
+    analyzeBtn.disabled = true;
+    glowBtn.disabled = true;
+
+    resultDiv.innerHTML = "<p>Analyzing your photo… please wait 💕</p>";
+
+    try {
+      const formData = new FormData();
+      formData.append("image", file);
+
+      const res = await fetch(ANALYZE_URL, { method: "POST", body: formData });
+      const text = await res.text();
+
+      // show model HTML
+      resultDiv.innerHTML = text;
+
+      // reveal glow-up button AFTER analysis
+      glowBtn.style.display = "inline-block";
+      glowHint.style.display = "block";
+      glowBtn.disabled = false;
+
+    } catch (err) {
+      resultDiv.innerHTML = "<p><strong>Error:</strong> " + err.message + "</p>";
+    } finally {
+      analyzeBtn.disabled = false;
+    }
   }
 
-  const resultDiv = document.getElementById("result");
-  const loading = document.getElementById("loading");
+  async function makeGlowUp() {
+    const file = imageInput.files[0];
+    if (!file) return alert("Please upload a photo first.");
 
-  resultDiv.innerHTML = "";
-  loading.innerHTML = "Analyzing your photo… please wait 💕";
+    glowBtn.disabled = true;
+    glowHint.innerText = "Creating your glow-up preview… one moment ✨";
+    glowHint.style.display = "block";
 
-  const formData = new FormData();
-  formData.append("image", file);
+    // clear old preview
+    glowSection.style.display = "none";
+    downloadLink.style.display = "none";
+    if (lastGlowObjectUrl) {
+      URL.revokeObjectURL(lastGlowObjectUrl);
+      lastGlowObjectUrl = null;
+    }
 
-  try{
-    const res = await fetch(WORKER_URL, {
-      method: "POST",
-      body: formData
-    });
+    try {
+      const formData = new FormData();
+      formData.append("image", file);
 
-    const html = await res.text();
+      // We expect the /glow endpoint to return an image (png/jpeg) as binary
+      const res = await fetch(GLOWUP_URL, { method: "POST", body: formData });
 
-    loading.innerHTML = "";
-    resultDiv.innerHTML = html;   // ← ONLY show worker output
+      if (!res.ok) {
+        const errText = await res.text().catch(() => "");
+        throw new Error("Glow-up endpoint error (" + res.status + "): " + (errText || "No details"));
+      }
+
+      const blob = await res.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      lastGlowObjectUrl = objectUrl;
+
+      glowImg.src = objectUrl;
+      glowSection.style.display = "block";
+
+      downloadLink.href = objectUrl;
+      downloadLink.style.display = "inline-block";
+
+      glowHint.innerText = "Done! If you like it, download it (or try a different photo).";
+
+    } catch (err) {
+      glowHint.innerText = "Sorry — the glow-up preview failed: " + err.message;
+    } finally {
+      glowBtn.disabled = false;
+    }
   }
-  catch(err){
-    loading.innerHTML = "";
-    resultDiv.innerHTML = "Something went wrong. Try again.";
-    console.error(err);
-  }
-}
 </script>
 
 </body>
 </html>
+
 
 
