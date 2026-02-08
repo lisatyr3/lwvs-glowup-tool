@@ -7,18 +7,23 @@
   <style>
     body {
       font-family: system-ui, Arial;
-      max-width: 720px;
+      max-width: 700px;
       margin: 40px auto;
       padding: 20px;
+      line-height: 1.6;
+    }
+
+    h2 {
       text-align: center;
-      background: #fafafa;
+      margin-bottom: 25px;
     }
 
     .box {
       border: 2px dashed #ccc;
       padding: 30px;
-      border-radius: 14px;
-      background: white;
+      border-radius: 12px;
+      text-align: center;
+      margin-bottom: 25px;
     }
 
     button {
@@ -29,32 +34,27 @@
       border-radius: 8px;
       font-size: 16px;
       cursor: pointer;
-      margin-top: 15px;
+      margin-top: 12px;
     }
 
-    .glow-btn {
-      background: #6d7fb5;
-      font-size: 18px;
-      padding: 14px 26px;
-      border-radius: 10px;
-      margin-top: 35px;
+    button:hover {
+      opacity: .9;
     }
 
     #result {
-      margin-top: 40px;
-      text-align: left;
+      margin-top: 30px;
     }
 
-    #glowPreview {
-      margin-top: 40px;
-      display: none;
-      text-align: center;
-    }
-
-    #glowPreview img {
-      max-width: 350px;
-      border-radius: 14px;
+    #photoResult img {
+      max-width: 100%;
+      border-radius: 12px;
       margin-top: 15px;
+    }
+
+    .download {
+      display: inline-block;
+      margin-top: 10px;
+      font-size: 14px;
     }
   </style>
 </head>
@@ -62,102 +62,106 @@
 
 <body>
 
-<h2>Your Personalized Glow-Up Plan ✨</h2>
+<h2>Your Personalized Glow Up Plan 💕</h2>
 
+
+<!-- ========================= -->
+<!-- Upload box -->
+<!-- ========================= -->
 <div class="box">
   <input type="file" id="imageInput" accept="image/*" />
-  <br/>
-
-  <button onclick="upload()">Analyze My Photo</button>
+  <br>
+  <button onclick="analyze()">Analyze My Photo</button>
 </div>
 
+
+<!-- ========================= -->
+<!-- AI results appear here -->
+<!-- ========================= -->
 <div id="result"></div>
 
-<div id="glowPreview">
-  <h2>Your Glow-Up Preview ✨</h2>
-  <img id="glowImage" />
-  <br/>
-  <a id="downloadBtn" download="my-glow-up.png">
-    <button style="background:#3b6b3f">Download My Glow-Up Photo</button>
-  </a>
-</div>
+
+<!-- ========================= -->
+<!-- Glow-up photo appears here -->
+<!-- ========================= -->
+<div id="photoResult"></div>
+
 
 
 <script>
 
-let lastFile = null;
+const WORKER_URL = "https://lwfs-glowup.lisa-668.workers.dev"; // keep yours here
 
 
-// ========================
-// Upload & Analyze
-// ========================
-async function upload() {
+// ==================================
+// ANALYZE PHOTO (text advice)
+// ==================================
+async function analyze() {
 
   const file = document.getElementById("imageInput").files[0];
   if (!file) return alert("Please upload a photo first");
 
-  lastFile = file;
-
   const formData = new FormData();
   formData.append("image", file);
 
-  const resultDiv = document.getElementById("result");
+  document.getElementById("result").innerHTML = "Analyzing your photo… please wait 💕";
+  document.getElementById("photoResult").innerHTML = "";
 
-  resultDiv.innerHTML = "Analyzing your photo... please wait 💕";
-
-  const res = await fetch("https://lwfs-glowup.lisa-668.workers.dev", {
+  const res = await fetch(WORKER_URL, {
     method: "POST",
     body: formData
   });
 
-  const text = await res.text();
+  const html = await res.text();
 
-  // show AI analysis
-  resultDiv.innerHTML = text;
-
-
-  // ========================
-  // ADD BUTTON AT BOTTOM
-  // ========================
-  resultDiv.innerHTML += `
-    <div style="text-align:center;">
-      <button class="glow-btn" onclick="glowUp()">
-        ✨ See Your Glow-Up Photo
-      </button>
+  // show AI advice (with embedded affiliate links)
+  document.getElementById("result").innerHTML =
+    html +
+    `
+    <div style="text-align:center;margin-top:35px;">
+      <button onclick="glowUp()">✨ See My Glow-Up Photo</button>
     </div>
-  `;
-
-  // auto scroll to bottom (nice UX)
-  window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+    `;
 }
 
 
 
-// ========================
-// Glow-Up Preview
-// (temporary demo version)
-// ========================
+// ==================================
+// GLOW UP PHOTO
+// ==================================
 async function glowUp() {
 
-  if (!lastFile) return;
+  const file = document.getElementById("imageInput").files[0];
+  if (!file) return;
 
-  // for now just preview original image
-  // next step we'll generate AI makeover
+  const fd = new FormData();
+  fd.append("image", file);
 
-  const reader = new FileReader();
+  const photoDiv = document.getElementById("photoResult");
+  photoDiv.innerHTML = "Creating your glow-up… ✨";
 
-  reader.onload = function(e) {
-    document.getElementById("glowPreview").style.display = "block";
-    document.getElementById("glowImage").src = e.target.result;
-    document.getElementById("downloadBtn").href = e.target.result;
+  const res = await fetch(WORKER_URL + "/glowup", {
+    method: "POST",
+    body: fd
+  });
 
-    window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
-  };
+  const data = await res.json();
 
-  reader.readAsDataURL(lastFile);
+  const imgUrl = data.data[0].url;
+
+  photoDiv.innerHTML =
+    `
+    <h3 style="margin-top:40px;">✨ Your Glow-Up Preview</h3>
+    <img src="${imgUrl}">
+    <br>
+    <a class="download" href="${imgUrl}" target="_blank" download>
+      Download Photo
+    </a>
+    `;
 }
 
 </script>
+
 
 </body>
 </html>
