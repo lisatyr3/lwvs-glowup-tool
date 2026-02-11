@@ -52,8 +52,7 @@ async function analyze(){
 
   document.getElementById("results").innerHTML = "Analyzing…";
 
-  // ✅ THIS IS THE FIX
-  const res = await fetch(WORKER + "/analyze", {
+  const res = await fetch(WORKER, {
     method:"POST",
     body:fd
   });
@@ -66,6 +65,7 @@ async function analyze(){
 </script>
 </body>
 </html>
+
 
 
 
