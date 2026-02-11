@@ -1,90 +1,60 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8" />
-  <title>Glow Up Tool</title>
+<meta charset="UTF-8" />
+<title>Glow Up Tool</title>
 
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      max-width: 900px;
-      margin: 40px auto;
-      text-align: center;
-    }
-
-    .btn {
-      background: #b07c69;
-      color: white;
-      padding: 14px 26px;
-      border-radius: 10px;
-      border: none;
-      font-size: 18px;
-      cursor: pointer;
-      margin: 12px;
-    }
-
-    #results {
-      margin-top: 40px;
-      text-align: left;
-    }
-
-    #glowPreview {
-      display: none;
-      margin-top: 30px;
-      text-align: center;
-    }
-
-    img {
-      max-width: 350px;
-      border-radius: 12px;
-    }
-  </style>
+<style>
+body{
+  font-family:system-ui;
+  max-width:800px;
+  margin:40px auto;
+  text-align:center;
+}
+.btn{
+  background:#b07c69;
+  color:white;
+  padding:14px 24px;
+  border:none;
+  border-radius:10px;
+  font-size:18px;
+  cursor:pointer;
+}
+#results{
+  margin-top:30px;
+  text-align:left;
+  line-height:1.7;
+}
+</style>
 </head>
 
 <body>
 
-<h1>Personalized Glow-Up Advice 💕</h1>
+<h2>Personalized Glow-Up Advice 💕</h2>
 
-<input type="file" id="photoInput" accept="image/*"><br>
+<input type="file" id="photoInput" accept="image/*"><br><br>
 
 <button class="btn" onclick="analyze()">Analyze My Photo</button>
-<button class="btn" onclick="glowup()">✨ See My Glow-Up Photo</button>
 
 <div id="results"></div>
 
-<div id="glowPreview">
-  <h2>Your Glow-Up Preview ✨</h2>
-  <img id="glowImg">
-  <br>
-  <a id="downloadBtn" class="btn" download="glowup.png">Download My Glow-Up Photo</a>
-</div>
-
-
 <script>
-/* =========================================
-   IMPORTANT
-   Replace with YOUR worker URL
-========================================= */
 
 const WORKER = "https://lwfs-glowup.lisa-668.workers.dev";
 
+async function analyze(){
 
-/* =========================================
-   Analyze Photo → /analyze
-========================================= */
-
-async function analyze() {
   const file = document.getElementById("photoInput").files[0];
-  if (!file) return alert("Choose a photo first");
+  if(!file) return alert("Choose a photo first");
 
   const fd = new FormData();
   fd.append("image", file);
 
   document.getElementById("results").innerHTML = "Analyzing…";
 
-  const res = await fetch(WORKER + "/analyze", {
-    method: "POST",
-    body: fd
+  const res = await fetch(WORKER, {
+    method:"POST",
+    body:fd
   });
 
   const html = await res.text();
@@ -92,44 +62,10 @@ async function analyze() {
   document.getElementById("results").innerHTML = html;
 }
 
-
-/* =========================================
-   Glow Up → /glowup
-========================================= */
-
-async function glowup() {
-  const file = document.getElementById("photoInput").files[0];
-  if (!file) return alert("Choose a photo first");
-
-  const fd = new FormData();
-  fd.append("image", file);
-
-  document.getElementById("glowPreview").style.display = "block";
-  document.getElementById("glowImg").src = "";
-  document.getElementById("glowImg").alt = "Creating your glow-up…";
-
-  const res = await fetch(WORKER + "/glowup", {
-    method: "POST",
-    body: fd
-  });
-
-  const data = await res.json();
-
-  if (!data.image_data_url) {
-    alert("Glow-up failed");
-    return;
-  }
-
-  const img = document.getElementById("glowImg");
-  img.src = data.image_data_url;
-
-  const dl = document.getElementById("downloadBtn");
-  dl.href = data.image_data_url;
-}
 </script>
-
 </body>
 </html>
+
 
 
 
