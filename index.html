@@ -11,7 +11,7 @@ body{
   margin:40px auto;
   text-align:center;
 }
-.btn{
+button{
   background:#b07c69;
   color:white;
   padding:14px 24px;
@@ -23,49 +23,63 @@ body{
 #results{
   margin-top:30px;
   text-align:left;
-  line-height:1.7;
 }
 </style>
 </head>
 
 <body>
 
-<h2>Personalized Glow-Up Advice 💕</h2>
+<h2>Glow-Up Analyzer</h2>
 
 <input type="file" id="photoInput" accept="image/*"><br><br>
 
-<button class="btn" onclick="analyze()">Analyze My Photo</button>
+<button onclick="analyze()">Analyze My Photo</button>
 
 <div id="results"></div>
 
 <script>
 
-const WORKER = "https://lwfs-glowup.lisa-668.workers.dev";
-
 async function analyze(){
 
-  const file = document.getElementById("photoInput").files[0];
-  if(!file) return alert("Choose a photo first");
+  const fileInput = document.getElementById("photoInput");
+  const results = document.getElementById("results");
 
-  const fd = new FormData();
-  fd.append("image", file);
+  if (!fileInput.files.length) {
+    alert("Please upload a photo");
+    return;
+  }
 
-  document.getElementById("results").innerHTML = "Analyzing…";
+  const formData = new FormData();
+  formData.append("image", fileInput.files[0]);
 
-  const res = await fetch(WORKER, {
-    method:"POST",
-    body:fd
-  });
+  results.innerHTML = "Analyzing...";
 
-  const html = await res.text();
+  try {
 
-  document.getElementById("results").innerHTML = html;
+    const response = await fetch("https://lwfs-glowup.lisa-668.workers.dev/", {
+      method: "POST",
+      body: formData
+    });
+
+    const text = await response.text();
+
+    console.log("SERVER RESPONSE:", text);
+
+    results.innerHTML = text;
+
+  } catch (error) {
+
+    console.error("FETCH ERROR:", error);
+
+    results.innerHTML = "Error: " + error.message;
+
+  }
 }
 
 </script>
+
 </body>
 </html>
-
 
 
 
