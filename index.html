@@ -5,46 +5,58 @@
 <title>Glow Up Tool</title>
 
 <style>
-body {
-  font-family: system-ui, -apple-system, sans-serif;
-  max-width: 800px;
-  margin: 40px auto;
-  text-align: center;
-  color: #333;
-  line-height: 1.6;
-}
-button {
-  background: #b07c69;
-  color: white;
-  padding: 14px 24px;
-  border: none;
-  border-radius: 10px;
-  font-size: 18px;
-  cursor: pointer;
-  transition: background 0.3s;
-}
-button:hover {
-  background: #966656;
-}
-#results {
-  margin-top: 30px;
-  text-align: left;
-  padding: 20px;
-  border-radius: 12px;
-}
-.error-msg {
-  background-color: #fffaf0;
-  border: 1px solid #e0d5c1;
-  padding: 20px;
-  border-radius: 12px;
-  text-align: center;
-  color: #555;
-}
-.loading-msg {
-  text-align: center;
-  font-style: italic;
-  color: #b07c69;
-}
+  body {
+    font-family: system-ui, -apple-system, sans-serif;
+    max-width: 800px;
+    margin: 40px auto;
+    text-align: center;
+    color: #333;
+    line-height: 1.6;
+  }
+  
+  /* The Analyze Button */
+  button {
+    background: #b07c69;
+    color: white;
+    padding: 14px 24px;
+    border: none;
+    border-radius: 10px;
+    font-size: 18px;
+    cursor: pointer;
+    transition: background 0.3s;
+  }
+  
+  button:hover {
+    background: #966656;
+  }
+
+  /* The Results Area */
+  #results {
+    margin-top: 30px;
+    text-align: left;
+    padding: 20px;
+    border-radius: 12px;
+  }
+
+  /* Friendly Error Box - Replaces the Popup Alert */
+  .error-msg {
+    background-color: #fffaf0; /* Warm cream */
+    border: 1px solid #e0d5c1;
+    padding: 25px;
+    border-radius: 15px;
+    text-align: center;
+    color: #555;
+    font-size: 1.1rem;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+  }
+
+  /* Loading State */
+  .loading-msg {
+    text-align: center;
+    font-style: italic;
+    color: #b07c69;
+    font-size: 1.2rem;
+  }
 </style>
 </head>
 
@@ -59,28 +71,30 @@ button:hover {
 <div id="results"></div>
 
 <script>
-
-async function analyze(){
-
+async function analyze() {
   const fileInput = document.getElementById("photoInput");
   const results = document.getElementById("results");
 
-  // REPLACED ALERT WITH IN-PAGE MESSAGE
+  // 1. Check for photo WITHOUT using alert() 
+  // This removes the "An embedded page at github" popup
   if (!fileInput.files.length) {
     results.innerHTML = `
       <div class="error-msg">
-        <p>Oops! I’d love to help, but I need a photo first so I can see your lovely face. 💕</p>
+        Oops! I’d love to help, but I need a photo first so I can see your lovely face. 💕
       </div>
     `;
     return;
   }
 
+  // 2. Prepare the photo for the Worker
   const formData = new FormData();
   formData.append("image", fileInput.files[0]);
 
+  // 3. Show a warm loading message
   results.innerHTML = "<p class='loading-msg'>Looking at your photo now... just a moment! ✨</p>";
 
   try {
+    // 4. Call your Cloudflare Worker
     const response = await fetch("https://lwfs-glowup.lisa-668.workers.dev/", {
       method: "POST",
       body: formData
@@ -88,9 +102,7 @@ async function analyze(){
 
     const text = await response.text();
 
-    console.log("SERVER RESPONSE:", text);
-
-    // If the worker returns a status error, we show it nicely
+    // 5. Display the result or a styled error if the server fails
     if (!response.ok) {
         results.innerHTML = `<div class="error-msg">${text}</div>`;
     } else {
@@ -99,10 +111,12 @@ async function analyze(){
 
   } catch (error) {
     console.error("FETCH ERROR:", error);
-    results.innerHTML = `<div class="error-msg">I'm having a little trouble connecting. Please try again in a moment!</div>`;
+    results.innerHTML = `
+      <div class="error-msg">
+        I'm having a little trouble connecting to the analyzer. Please check your connection and try again!
+      </div>`;
   }
 }
-
 </script>
 
 </body>
